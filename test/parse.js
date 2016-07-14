@@ -4,6 +4,7 @@ import Parser from '../src/parse/Parser';
 
 var input = null;
 var result = null;
+var tests = null;
 
 function parse(text) {
     result = '' + Parser.parse(text || input);
@@ -24,6 +25,40 @@ function compare(tree, that) {
 
 }
 
+function makeTest(test, index) {
+
+    if (!test.skip) {
+
+        input = test.input;
+        parse();
+        return test.print ? print(result) : compare(result, test.expect);
+
+    }
+}
+
+tests = {
+
+    'should parse a simple query ': [{
+        input: 'from "users" find *',
+        skip: true,
+        expect: expects['should parse a simple query'][0]
+    }, {
+        input: 'from "users" find name, email, -password, comments.0, "comments.from"',
+        skip: true,
+        expect: expects['should parse a simple query'][1]
+    }],
+    'should parse a simple query with a simple where clause': {
+        input: 'from "users" find name, email, -password where status == "active"',
+        skip: true,
+        expect: expects['should parse a simple where clause']
+    },
+    'should parse a logical where clause': {
+        input: 'from "users" find email, -"password" where status == "active" or status == "locked"',
+        print: true,
+        expect: expects['should parse a logical where clause']
+    }
+};
+
 describe('Parser', function() {
 
     beforeEach(function() {
@@ -35,183 +70,22 @@ describe('Parser', function() {
 
     describe('parse()', function() {
 
-        it('should parse imports', function() {
+        Object.keys(tests).forEach(k => {
 
-            input = `import lib from "path/to/libs";  <tag/>`;
-            parse();
-            compare(result, expects[this.test.title]);
+            it(k, function() {
 
+                if (Array.isArray(tests[k])) {
+
+                    tests[k].forEach(makeTest);
+
+                } else {
+
+                    makeTest(tests[k]);
+
+                }
+
+            });
         });
-
-        it('should parse a self closing tag', function() {
-
-            input = '<simple/>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        it('should parse a self closing tag with attributes', function() {
-
-            input = '<user name="xyaa aaz" position={{4|x(20)}} wml:val="test"/>';
-            parse();
-            compare(result, expects[this.test.title][0]);
-
-            input = '<user enabled id=24 />';
-            parse();
-            compare(result, expects[this.test.title][1]);
-
-            input = '<user name="xyaa aaz" id="24" align="left"/>';
-            parse();
-            compare(result, expects[this.test.title][2]);
-
-        });
-
-        xit('should parse a parent tag', function() {
-
-            input = '<panel>  \n\n\n\n\n\n\n\n\n  </panel>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should parse a parent tag with attributes', function() {
-
-            input = '<panel type="default" size="40" align="left"> </panel>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should parse parent tags with mixed children', function() {
-
-            input = '<panel>This is my offsprings.<a>Link</a>Hey now! <Input/></panel>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should parse parent tags with tag children (L1)', function() {
-
-            input = '<panel><a></a></panel>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should parse parent tags with tag children (L2)', function() {
-
-            input = '<panel><a href="link" onclick={{this.someting.invoke()}}>' +
-                'Click Here</a><table/></panel>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-
-        });
-
-        xit('should parse parent tags with tag children (L3)', function() {
-
-            input = '<panel><a href="link">Click Here</a><table/><panel c="22"></panel></panel>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should do it all together now', function() {
-
-            input = `<modal name="mymodal" x="1" y="2">
-                        <modal-header>My Modal</modal-header>
-                        <modal-body>
-                         Creativity is inhibited by greed and corruption.
-                         <vote-button/>
-                         <vote-count source={{this}}/> Votes
-                         <textarea wml:id="ta" disabled size=32 onchange={{this.setText}}>
-                           Various text
-                         </textarea>
-                        </modal-body>
-                    </modal>`;
-
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should parse for expressions', function() {
-
-            input = '<root>' +
-                '{% for item in list %}' +
-                '<stem>A Stem</stem>' +
-                '{% endfor %}' +
-                '</root>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-
-        });
-
-        xit('should parse if expressions', function() {
-
-            input =
-                '<div>' +
-                '{% if (length(values()) >= 12) %}' +
-                'Your length is more than 11!' +
-                '<eye>Tiger</eye>' +
-                '{% endif%}' +
-                '</div>';
-
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should parse bind expressions', function() {
-
-            input = '<div onfocus={{this::doAction}}/>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should parse ternary expressions', function() {
-
-            input = '<div id={{this.id}}>{{this.check() ? a : b }}</div>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should parse function literals', function() {
-
-            input = '<button onclick={{(e)=>this.call(e)}}/>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should parse includes', function() {
-
-            input = '<tr>{% for x,i in y %}{% include this.getFrags() [ctx1, ctx2] %}{% include val %}{% endfor %}</tr>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should parse negative numbers', function() {
-
-            input = '<tag n={{ ( -0.5 + 3) }} m={{(4 + -2)}} g={{ (10 --5) }}/>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
-        xit('should allow filter chaining', function() {
-
-            input = '<p>{{ value | f1 | f2(2) | f3(this.value) }}</p>';
-            parse();
-            compare(result, expects[this.test.title]);
-
-        });
-
 
     });
 
