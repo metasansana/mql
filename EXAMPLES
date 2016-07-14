@@ -1,0 +1,101 @@
+
+# Examples
+
+Here are some example queries and the expected action.
+
+
+### Inner Join
+
+```sql
+
+select 'users.name' , 'contacts.phone' from 'users' 
+inner join 'contacts' AS 'contacts' 
+on 'users.id' = 'contacts.user_id' where 'users.status' = 'active' 
+
+```
+
+1. Find users that have status='active' returning their name and id field.
+2. Create a list of all the user ids.
+3. Find all the contacts that have their 'user_id' field in that list
+   returning the 'user_id'and 'name' fields. 
+4. Filter the list of users returning only the ones that have a contact in the
+   contact list that matches the 'id' field.
+
+```javascript
+
+db.users.find({status:'active'}, {id:1, name:1}).
+toArray().
+then(function(users) {
+
+  var keys = users.map(user=>user['id']);
+  var rightQry = {};
+
+  rightQry['userid'] = {$in: keys};
+
+  return db.contacts.find(rightQry).
+  then(function(contacts) {
+
+  return users.filter(function (user) {
+
+  var joined = false;
+
+   contacts.forEach(function (contact) {
+
+     if(contact['user_id'] === user['id']) {
+       user['contact'] = Array.isArray(user['contact'])? user['contact'] : [];
+       user['contact'].push(contact);
+       joined = true;
+     }
+
+   });
+
+   return joined;
+
+  });
+
+
+});
+
+  
+```
+
+### Full Outer Join
+
+```sql
+
+ select * FROM 'institutions'
+ full outer join 'physicians' on 'institution.id' = 'physician.id'
+
+```
+
+1. 
+
+### Left Outer Join
+
+```sql
+
+ select * FROM 'institutions'
+ left outer join 'physicians' on 'institution.id' = 'physician.id'
+
+```
+
+### Left Outer Join Differnce
+
+```sql
+
+ select * FROM 'institutions'
+ left outer join 'physicians' on 'institution.id' = 'physician.id'
+ where 
+
+```
+
+### Left Outer symetric difference
+
+```sql
+
+ select * FROM 'institutions'
+ left outer join 'physicians' on 'institution.id' = 'physician.id'
+ where 
+
+```
+
