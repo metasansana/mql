@@ -48,15 +48,70 @@ tests = {
         expect: expects['should parse a simple query'][1]
     }],
     'should parse a simple query with a simple where clause': {
-        input: 'from "users" find name, email, -password where status == "active"',
+        input: 'from "users" find name, email, !password where status == "active"',
         skip: true,
         expect: expects['should parse a simple where clause']
     },
     'should parse a logical where clause': {
-        input: 'from "users" find email, -"password" where status == "active" or status == "locked"',
-        print: true,
+        input: 'from "users" find email, !"password" where status == "active" or status == "locked"',
+        skip: true,
         expect: expects['should parse a logical where clause']
+    },
+    'should parse variable references': {
+        input: 'from {{collection}} find * where status == {{status}}',
+        skip: true,
+        expect: expects['should parse variable references']
+
+    },
+    'should parse a complex where clause': {
+
+        input: 'from "users" find email, status where (status == "active" or status == "pending" ' +
+            ' or status == "locked") and (isAdmin exists and age > 33 and name != "Gatsby") limit by 27',
+        skip: true,
+        expect: expects['should parse a complex where clause']
+
+    },
+    'should parse a continuing where clause': {
+
+        input: 'from "users" find email, status where status == "active" and level == 1 ' +
+            ' and realm == "Sando" and comments exists limit by 27',
+        print: true,
+        expect: expects['should parse a complex continuing where clause']
+
+    },
+    'should parse inner joins': {
+
+        input: 'from "users" find id, email, !password ' +
+            'where status == "active" limit by 10 ' +
+            'sort by +"_id", -name, -status ' +
+            'join * from "comments" where user == @id',
+        skip: true,
+        expect: expects['should parse inner joins']
+
+    },
+    'should parse left joins': {
+
+        input: 'from "users" find !_id, email, !password ' +
+            'where age > 2 sort by +email ' +
+            'left join * from "user_likes" as "likes"',
+        skip: true,
+        expect: expects['should parse left joins']
+
+    },
+    'should parse insert statements': {
+        input: 'with "users" insert {name:"flako"}',
+        skip: true,
+        expect: expects['should parse insert statements']
+    },
+    'should parse update statements': {
+
+        input: 'with "users" set {status:"pending"} ' +
+            'where source == "web"',
+        skip: true,
+        expect: expects['should parse update statements']
+
     }
+
 };
 
 describe('Parser', function() {

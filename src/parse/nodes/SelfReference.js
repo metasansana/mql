@@ -6,11 +6,11 @@ import Node from './Node';
 class FieldReference extends Node {
 
 
-    constructor(field, include, location) {
+    constructor(value, include, location) {
 
         super();
         this.type = 'field-reference';
-        this.field = field;
+        this.value = value;
         this.include = include;
         this.location = location;
 

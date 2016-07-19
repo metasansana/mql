@@ -1,15 +1,15 @@
 import Node from './Node';
 
 /**
- * Condition 
+ * ComparisonExpression 
  */
-class Condition extends Node {
+class ComparisonExpression extends Node {
 
 
     constructor(left, operator, right, location) {
 
         super();
-        this.type = 'condition';
+        this.type = 'comparison-expression';
         this.left = left;
         this.operator = operator;
         this.right = right;
@@ -18,4 +18,4 @@ class Condition extends Node {
     }
 }
 
-export default Condition
+export default ComparisonExpression
