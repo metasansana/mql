@@ -174,34 +174,53 @@ field_name
 
                     | IDENTIFIER
                       {$$ = $1;}
-
                   ;
 
 where_expression
-                    : WHERE expression
+                    : WHERE filter
+                      {$$ =  {$and:[$1], $or:[], $nor:[]};}
+
+                    | WHERE '(' filter ')'
+                      {$$ =  {$and:[$3], $or:[], $nor:[]};}
+   
+                    | WHERE filter_expression
                       {$$ = $2;}
                     ;
 
-expression
-                    : comparison_expression
-                      {$$ = $1;}
+filter_expression
+                   : filter logical_operator filter
+                     {$$ =  {$and:[], $or:[], $nor:[]};
+                      $$[$2].push($1, $3);
+                     }
 
-                    | '(' comparison_expression ')'
-                      {$$ = $2; }
+                   | '(' filter ')' logical_operator filter
+                     {$$ =  {$and:[], $or:[], $nor:[]};
+                      $$[$4].push($2, $5);
+                     }
 
-                    | logical_expression
-                      {$$ = $1;}
-                    ;
+                   | filter logical_operator '(' filter ')'
+                     {$$ =  {$and:[], $or:[], $nor:[]};
+                      $$[$2].push($1, $4);
+                     }
 
-logical_expression
-                   : comparison_expression logical_operator comparison_expression
-                     {$$ = new yy.ast.LogicalExpression($1, $2, $3, @$); }
+                   | '(' filter ')' logical_operator '(' filter ')'
+                     {$$ =  {$and:[], $or:[], $nor:[]};
+                      $$[$4].push($2, $3);
+                     }
 
-                   | logical_expression logical_operator comparison_expression
-                     {$$ = new yy.ast.LogicalExpression($1, $2, $3, @$); }
-                   
-                   | '(' logical_expression ')' logical_operator '(' logical_expression ')'
-                     {$$ = new yy.ast.LogicalExpression($2, $4, $6, @$);}
+                   | filter_expression logical_operator filter
+                     {$$ = $1;
+                      $$[$2].push($3);
+                     }
+
+                   | filter_expression logical_operator '(' filter ')'
+                     {$$ = $1;
+                      $$[$2].push($4);
+                     }
+
+                   | '(' filter_expression ')' logical_operator '(' filter_expression ')'
+                     {$$ = {$and:[], $or:[], $nor:[]};
+                     }
                    ;
 
 logical_operator
@@ -210,8 +229,8 @@ logical_operator
                     | NOR      {$$ = '$nor';}
                     ;
 
-comparison_expression
-                    : field_name comparison_operator right_value
+filter
+                    : field_name filter_operator right_value
                       {$$ = new yy.ast.ComparisonExpression($1, $2, $3, @$);           }
 
                     | field_name IN array_literal
@@ -227,7 +246,7 @@ comparison_expression
                       {$$ = new yy.ast.ComparisonExpression($1, '$exists', false, @$); }
                     ;
 
-comparison_operator
+filter_operator
                     : '>'     {$$ = '$gt';    }
                     | '>='    {$$ = '$gte';   }
                     | '<'     {$$ = '$lt';    }
