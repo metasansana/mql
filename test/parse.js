@@ -15,8 +15,11 @@ function json(tree) {
     return JSON.stringify(tree);
 }
 
-function print(tree) {
+function print(tree, index) {
+    console.log(index);
+    console.log('================================BEGIN');
     console.log(json(result));
+    console.log('================================END');
 }
 
 function compare(tree, that) {
@@ -31,7 +34,7 @@ function makeTest(test, index) {
 
         input = test.input;
         parse();
-        return test.print ? print(result) : compare(result, test.expect);
+        return test.print ? print(result, index) : compare(result, test.expect);
 
     }
 }
@@ -49,7 +52,7 @@ tests = {
     }],
     'should parse a simple query with a simple where clause': {
         input: 'from "users" find name, email, !password where status == "active"',
-        skip: true,
+        print: true,
         expect: expects['should parse a simple where clause']
     },
     'should parse a logical where clause': {
@@ -63,18 +66,27 @@ tests = {
         expect: expects['should parse variable references']
 
     },
+    'should parse a three grouped where clause': {
+
+        input: 'from patients find * where x == 2 or (x == 23 and y == false)',
+        print: true,
+        expects: expects['should parse a three grouped where clause']
+
+    },
     'should parse a complex where clause': {
 
-        input: 'from "users" find email, status where (status == "active" or status == "pending" ' +
-            ' or status == "locked") and (isAdmin exists and age > 33 and name != "Gatsby") limit by 27',
-        skip: true,
+        input: 'from "users" find email, status where ' +
+            '(ix exists and status == "active" or status == "pending" or status == "locked") ' +
+            'and (isAdmin exists and age > 33 and name != "Gatsby") ' +
+            'or flagged==false limit by 27',
+        print: true,
         expect: expects['should parse a complex where clause']
 
     },
     'should parse a continuing where clause': {
 
         input: 'from "users" find email, status where status == "active" and level == 1 ' +
-            ' and realm == "Sando" and comments exists limit by 27',
+            ' and realm == "Sando" or "limit"=="ot" and comments exists limit by 27',
         print: true,
         expect: expects['should parse a complex continuing where clause']
 
@@ -94,7 +106,7 @@ tests = {
         input: 'from "users" find !_id, email, !password ' +
             'where age > 2 sort by +email ' +
             'left join * from "user_likes" as "likes"',
-        skip: true,
+        print: true,
         expect: expects['should parse left joins']
 
     },
@@ -135,7 +147,7 @@ describe('Parser', function() {
 
                 } else {
 
-                    makeTest(tests[k]);
+                    makeTest(tests[k], k);
 
                 }
 

@@ -1,5 +1,5 @@
 {
-  "name": "mongo-parser",
+  "name": "mql",
   "version": "0.0.1",
   "description": "Parses an SQL like syntax for creating MongoDB queries",
   "main": "index.js",
@@ -24,5 +24,8 @@
     "mocha": "^2.5.3",
     "mongodb": "^2.2.4",
     "must": "^0.13.1"
+  },
+  "dependencies": {
+    "property-seek": "0.0.2"
   }
 }

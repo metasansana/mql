@@ -7,19 +7,18 @@ import FindStatement from './FindStatement';
 import InsertStatement from './InsertStatement';
 import UpdateStatement from './UpdateStatement';
 import RemoveStatement from './RemoveStatement';
-import LogicalExpression from './LogicalExpression';
-import ComparisonExpression from './ComparisonExpression';
+import LogicFilter from './LogicFilter';
+import Filter from './Filter';
 import FieldReference from './FieldReference';
 import LimitClause from './LimitClause';
 import ContextReference from './ContextReference';
-import VariableReference from './VariableReference';
 import Identifier from './Identifier';
 import InnerJoinStatement from './InnerJoinStatement';
 import LeftJoinStatement from './LeftJoinStatement';
 import OuterJoinStatement from './OuterJoinStatement';
+import JoinCondition from './JoinCondition';
 import SortClause from './SortClause';
 import FieldSort from './FieldSort';
-import CollectionReference from './CollectionReference';
 
 /**
  * AbstractSyntaxTree 
@@ -37,19 +36,18 @@ class AbstractSyntaxTree {
         this.InsertStatement = InsertStatement;
         this.UpdateStatement = UpdateStatement;
         this.RemoveStatement = RemoveStatement;
-        this.LogicalExpression = LogicalExpression;
-        this.ComparisonExpression = ComparisonExpression;
+        this.LogicFilter = LogicFilter;
+        this.Filter = Filter;
         this.FieldReference = FieldReference;
         this.ContextReference = ContextReference;
-        this.VariableReference = VariableReference;
         this.Identifier = Identifier;
         this.LimitClause = LimitClause;
         this.InnerJoinStatement = InnerJoinStatement;
         this.LeftJoinStatement = LeftJoinStatement;
         this.OuterJoinStatement = OuterJoinStatement;
+        this.JoinCondition = JoinCondition;
         this.SortClause = SortClause;
         this.FieldSort = FieldSort;
-        this.CollectionReference = CollectionReference;
 
     }
 

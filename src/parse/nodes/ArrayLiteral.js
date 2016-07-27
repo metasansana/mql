@@ -20,6 +20,12 @@ class ArrayLiteral extends Node {
 
     }
 
+    asValue(context) {
+
+      return this.members.map(m=>m.asValue(context));
+
+    }
+
     compile(o) {
 
         var node = this.sourceNode(o.fileName, '[');

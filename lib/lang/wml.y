@@ -74,6 +74,7 @@ Text ({DoubleStringCharacter}*)|({SingleStringCharacter}*)
 'remove'|'REMOVE'                               return 'REMOVE';
 'with'|'WITH'                                   return 'WITH';
 'set'|'SET'                                     return 'SET';
+'once'|'ONCE'                                   return 'ONCE';
 {NumberLiteral}                                 return 'NUMBER_LITERAL';
 {StringLiteral}                                 return 'STRING_LITERAL';
 '{{'                                            return '{{';
@@ -110,13 +111,14 @@ Text ({DoubleStringCharacter}*)|({SingleStringCharacter}*)
 
 %ebnf
 %start statement
+%left NOR
+%left AND
+%left OR
 %%
 
 statement
-                    : find_statement EOF
-                      {$$ = $1; return $$;}
-                    
-                    | insert_statement EOF
+                   
+                    : insert_statement EOF
                       {$$ = $1; return $$;}
 
                     | update_statement EOF
@@ -124,29 +126,60 @@ statement
 
                     | remove_statement EOF
                       {$$ = $1; return $$;}
+
+                    | find_statement EOF
+                      {$$ = $1; return $$;}
+                    ;
+
+insert_statement
+                    : INTO collection INSERT object_literal
+                      {$$ = new yy.ast.InsertStatement($2, $4, @$);           }
+                    ;
+
+update_statement
+                    : FROM collection SET object_literal where_expression? ONCE?
+                      {$$ = new yy.ast.UpdateStatement($2, $4, $5||[], $6||false,  @$);}
+                    ;
+
+remove_statement
+                    : FROM collection REMOVE where_expression? ONCE?
+                      {$$ = new yy.ast.RemoveStatement($2, $4||[], $5||false, @$);}
                     ;
 
 find_statement
-                    : FROM string_literal FIND field_expression
+                    : FROM collection FIND field_select_expression
                       where_expression? modifiers* joins*
-                      {$$ = new yy.ast.FindStatement($2, $4, $5 || null, $6 || [], $7||[],  @$);}
+                      {$$ = new yy.ast.FindStatement($2, $4, $5 || [], $6 || [], $7||[],  @$);}
                     ;
 
 
+field_select_expression
 
+                    : field_name
+                      {$$ = {_id:false};
+                       $$[$1] = true;
+                      }
 
-
-field_expression
-                    : field_reference
-                      {$$ = [$1];}
+                    | '!' field_name
+                      {$$ = {_id:false};
+                       $$[$2] = false;
+                      }
                     
-                    | field_expression ',' field_reference
-                      {$$ = $1.concat($3);}
+                    | field_select_expression ',' field_name
+                      {$$ = $1;
+                       $$[$3] = true;
+                      }
+
+                    | field_select_expression ',' '!' field_name
+                      {$$ = $1;
+                       $$[$4] = false;
+                      }
 
                     | '*' 
-                      {$$ = [];}
+                      {$$ = {};}
                     ;
 
+/* Removed to reduce number of nodes needed to implement
 field_reference
                     : field_name
                       {$$ = new yy.ast.FieldReference($1, true, @$);  }
@@ -154,38 +187,76 @@ field_reference
                     | '!' field_name
                       {$$ = new yy.ast.FieldReference($2, false,  @$);}
                     ; 
+*/
 
 field_name
-                    : string_literal
-                    | identifier
+                    : STRING_LITERAL
+                      {$$ = $1.substring(1, $1.length -1);}
+
+                    | IDENTIFIER
+                      {$$ = $1;}
                     ;
 
 where_expression
-                    : WHERE expression
+
+                    : WHERE filters
                       {$$ = $2;}
                     ;
 
-expression
-                    : comparison_expression
-                      {$$ = $1;}
+filters
+                    : filter
+                      {$$ = [$1]; }
 
-                    | '(' comparison_expression ')'
-                      {$$ = $2; }
+                    | filters ',' filter
+                      {$$ = $1;
+                       $$.push($3);
+                      }
 
-                    | logical_expression
-                      {$$ = $1;}
+                    | logical_filter
+                      {$$ = [$1];}
                     ;
 
-logical_expression
-                   : comparison_expression logical_operator comparison_expression
-                     {$$ = new yy.ast.LogicalExpression($1, $2, $3, @$); }
+logical_filter
 
-                   | logical_expression logical_operator comparison_expression
-                     {$$ = new yy.ast.LogicalExpression($1, $2, $3, @$); }
-                   
-                   | '(' logical_expression ')' logical_operator '(' logical_expression ')'
-                     {$$ = new yy.ast.LogicalExpression($2, $4, $6, @$);}
-                   ;
+                    : filter AND filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3, @$);}
+
+                    | filter OR filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3, @$);}
+
+                    | filter NOR filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3, @$);}
+
+                    | filter AND logical_filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3, @$);}
+
+                    | filter OR logical_filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3, @$);}
+
+                    | filter NOR logical_filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3, @$);}
+
+                    | logical_filter AND filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3, @$);}
+
+                    | logical_filter OR filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3, @$);}
+
+                    | logical_filter NOR filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3, @$);}
+
+                    | logical_filter AND logical_filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3); }
+
+                    | logical_filter OR logical_filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3); }
+
+                    | logical_filter NOR logical_filter
+                      {$$ = new yy.ast.LogicFilter($1, $2, $3); }
+
+                    | '(' logical_filter  ')'
+                      {$$ = $2;}
+                    ;
 
 logical_operator
                     : OR       {$$ = '$or'; }
@@ -193,41 +264,34 @@ logical_operator
                     | NOR      {$$ = '$nor';}
                     ;
 
-comparison_expression
-                    : field_name comparison_operator right_value
-                      {$$ = new yy.ast.ComparisonExpression($1, $2, $3, @$);           }
+filter
+                    : field_name filter_operator value_expression
+                      {$$ = new yy.ast.Filter($1, $2, $3, @$);           }
 
                     | field_name IN array_literal
-                      {$$ = new yy.ast.ComparisonExpression($1, '$in', $3, @$);        }
+                      {$$ = new yy.ast.Filter($1, '$in', $3, @$);        }
 
                     | field_name NOT IN array_literal
-                      {$$ = new yy.ast.ComparisonExpression($1, '$nin', $3, @$);       }
+                      {$$ = new yy.ast.Filter($1, '$nin', $4, @$);       }
 
                     | field_name EXISTS 
-                      {$$ = new yy.ast.ComparisonExpression($1, '$exists', true, @$);  }
+                      {$$ = new yy.ast.Filter($1, '$exists',
+                      new yy.ast.BooleanLiteral(true, @$));  }
 
                     | field_name NOT EXISTS 
-                      {$$ = new yy.ast.ComparisonExpression($1, '$exists', false, @$); }
+                      {$$ = 
+                      new yy.ast.Filter($1, '$exists',
+                      new yy.ast.BooleanLiteral(false, @$)); }
+
                     ;
 
-comparison_operator
+filter_operator
                     : '>'     {$$ = '$gt';    }
                     | '>='    {$$ = '$gte';   }
                     | '<'     {$$ = '$lt';    }
                     | '<='    {$$ = '$lte';   }
                     | '=='    {$$ = '$eq';    }
                     | '!='    {$$ = '$ne';    }
-                    ;
-
-right_value
-                    : literal
-                    | variable_reference
-                    | context_reference
-                    ;
-
-context_reference
-                    : '@' field_name
-                      {$$ = new yy.ast.ContextReference($2, @$); }
                     ;
 
 modifiers
@@ -241,7 +305,7 @@ limit_clause
 
 sort_clause
                     : SORT BY field_sorts
-                      {$$ = new yy.ast.SortClause($3,  @$);  }
+                      {$$ = new yy.ast.SortClause($3,  @$);     }
                     ;
 
 field_sorts
@@ -261,71 +325,83 @@ field_sort
                     ;
 
 joins
-                    : JOIN field_expression FROM collection_reference
-                      where_expression? modifiers*
-                      {$$ = new yy.ast.InnerJoinStatement($2, $4, $5||[], $6||[], @$); }
+                    : JOIN field_select_expression FROM collection
+                      where_expression? modifiers* ON join_condition
+                      {$$ = 
+                      new yy.ast.InnerJoinStatement
+                      ($2, $4, $4, $5||[], $6||[], $8, @$);
+                      }
 
-                    | LEFT JOIN field_expression FROM collection_reference
-                      where_expression? modifiers*
-                      {$$ = new yy.ast.LeftJoinStatement($2, $5, $6 || [], @$);        } 
+                    | JOIN field_select_expression FROM collection AS collection
+                      where_expression? modifiers* ON join_condition
+                      {$$ = 
+                      new yy.ast.InnerJoinStatement
+                      ($2, $4, $6, $7||[], $8||[], $10, @$);
+                      }
 
-                    | OUTER JOIN field_expression FROM collection_reference
-                      where_experession? modifiers*
-                      {$$ = new yy.ast.OuterJoinStatement($2, $5, $6 || [], @$);       }
+                    | LEFT JOIN field_select_expression FROM collection
+                      where_expression? modifiers* ON join_condition
+                      {$$ = 
+                      new yy.ast.LeftJoinStatement
+                      ($3, $5, $5, $6 || [], $7 || [], $9,  @$);        
+                      } 
+
+                    | LEFT JOIN field_select_expression FROM collection
+                      AS collection where_expression? modifiers* ON join_condition
+                      {$$ = 
+                      new yy.ast.LeftJoinStatement
+                      ($3, $5, $7, $8 || [], $9 || [], $11,  @$);        
+                      } 
+
+                    | OUTER JOIN field_select_expression FROM collection
+                      where_experession? modifiers* ON join_condition
+                      {$$ = 
+                      new yy.ast.OuterJoinStatement
+                      ($3, $5, $5, $6 || [], $7 || [], $9, @$);      
+                      }
+
+                    | OUTER JOIN field_select_expression FROM collection
+                      AS collection where_experession? modifiers* ON join_condition
+                      {$$ = 
+                      new yy.ast.OuterJoinStatement
+                      ($3, $5, $7, $8 || [], $9 || [], $11,  @$);      
+                      }
                     ;
 
-collection_reference
-                    : (string_literal | variable_reference) 
-                      {$$ = new yy.ast.CollectionReference($1, '', @$);                         }
-
-                    | string_literal
-                      AS string_literal 
-                      {$$ = new yy.ast.CollectionReference($1, $3, @$);                         }
-
-                    | variable
-                      AS string_literal 
-                      {$$ = new yy.ast.CollectionReference($1, $3, @$);                         }
-
-                    | string_literal
-                      AS variable 
-                      {$$ = new yy.ast.CollectionReference($1, $3, @$);                         }
-                    
-                    | variable
-                      AS variable
-                      {$$ = new yy.ast.CollectionReference($1, $3, @$);                         }
-
+join_condition
+                    : (string_literal | identifier) '==' (string_literal | identifier)
+                      {$$ = new yy.ast.JoinCondition($1, $3, @$);}
                     ;
 
-insert_statement
-                    : WITH string_literal INSERT value_expression 
-                      {$$ = new yy.ast.InsertStatement($2, $4, @$);           }
+
+collection
+                    : (string_literal | identifier)
                     ;
 
-update_statement
-                    : WITH string_literal SET value_expression where_expression?
-                      {$$ = new yy.ast.UpdateStatement($2, $4, $5, @$);       }
-                    ;
-
-remove_statement
-                    : FROM string_literal where_expression? REMOVE ONE?
-                      {$$ = new yy.ast.RemoveStatement($2, $3, $5||false, @$);}
+identifier
+                    : IDENTIFIER
+                      {$$ = new yy.ast.Identifier($1, @$);}
                     ;
 
 value_expression
-                    : array_literal
-                    | object_literal
-                    | string_literal
-                    | number_literal
-                    | boolean_literal
+                    : context_reference
+                    | current_reference
+                    | literal
                     ;
-                    
-variable_reference
+                   
+current_reference
+                    : '@' field_name
+                      {$$ = new yy.ast.ContextReference($2, @$); }
+                    ;
+
+context_reference
                     : '{{' IDENTIFIER '}}' 
-                      {$$ = new yy.ast.VariableReference($2,  @$);} 
+                      {$$ = new yy.ast.ContextReference($2,  @$);} 
                     ;
 
 literal
                     : array_literal
+                    | object_literal
                     | string_literal
                     | number_literal
                     | boolean_literal
@@ -335,8 +411,16 @@ array_literal
                     : '[' ']' 
                       {$$ = new yy.ast.ArrayLiteral([], @$); }
 
-                    | '[' arguments ']'
+                    | '[' value_list ']'
                       {$$ = new yy.ast.ArrayLiteral($2, @$); }
+                    ;
+
+value_list
+                    : value_expression
+                      {$$ = [$1];}
+
+                    | value_list ',' value_expression
+                      {$$ = $1.concat($3);}
                     ;
 
 object_literal
@@ -359,7 +443,7 @@ key_value_pairs
 
 key_value_pair
 
-                    : identifier ':' right_value
+                    : (identifier|string_literal) ':' value_expression
                       {$$ = {key:$1, value:$3}; }
                     ;
 
@@ -377,7 +461,4 @@ boolean_literal
                     {$$ = new yy.ast.BooleanLiteral(yy.help.parseBoolean($1), @$);}
                     ;
 
-identifier
-                    : IDENTIFIER
-                      {$$ = new yy.ast.Identifier($1, @$);}
-                    ;
+

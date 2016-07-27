@@ -14,6 +14,12 @@ class BooleanLiteral extends Node {
 
     }
 
+    asValue() {
+
+      return Boolean(this.value);
+
+    }
+
     transpile() {
 
       return this.value;

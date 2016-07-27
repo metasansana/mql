@@ -16,6 +16,19 @@ class ObjectLiteral extends Node {
 
     }
 
+    asValue(context) {
+
+        var o = {};
+        this.keys.forEach(k => {
+
+            o[k.key.asValue(context)] = k.value.asValue(context);
+
+        });
+
+        return o;
+
+    }
+
     transpile() {
 
         return '{' + this.keys.map(p => `${k.key}:${k.value.transpile()}`).join(',') + '}';

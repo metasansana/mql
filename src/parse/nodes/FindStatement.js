@@ -27,19 +27,15 @@ class FindStatement extends Node {
     execute(db, context) {
 
         var fields = this.fields;
-        var where = this.where.toObject();
+        var where = {};
+        var cursor;
 
-        var cursor = db[this.collection].find(where, fields);
-
+        this.where.forEach(w => w.apply(where, context));
+        cursor = db.collection(this.collection.asValue(context)).find(where, fields);
         this.modifiers.forEach(m => m.apply(cursor));
 
-        return this.joins.reduce(function(p, join) {
-
-            return p.then(function(data) {
-                return join.execute(db, context, data);
-            });
-
-        }, cursor.toArray());
+        return this.joins.reduce((p, join) => p.then((data) =>
+            join.apply(data, db, context)), cursor.toArray());
 
     }
 

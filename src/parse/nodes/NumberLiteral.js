@@ -6,10 +6,16 @@ import Node from './Node';
 class NumberLiteral extends Node {
 
     constructor(value, location) {
-super();
+        super();
         this.type = 'number-literal';
         this.value = value;
         this.location = location;
+
+    }
+
+    asValue(context) {
+
+        return parseFloat(this.value);
 
     }
 

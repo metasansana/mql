@@ -5,13 +5,20 @@ import Node from './Node';
  */
 class InputStatement extends Node {
 
-    constructor(values, collection, location) {
+    constructor(collection, values, location) {
 
         super();
         this.type = 'insert-statement';
-        this.values = values;
         this.collection = collection;
+        this.values = values;
         this.location = location;
+
+    }
+
+    execute(db, context) {
+
+        return db.collection(this.collection.asValue(context)).
+        insertOne(this.values.asValue(context));
 
     }
 

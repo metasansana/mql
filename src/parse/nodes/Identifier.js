@@ -14,6 +14,12 @@ class Identifier extends Node {
 
     }
 
+    asValue(context) {
+
+      return this.value;
+
+    }
+
     transpile() {
 
         return this.value;

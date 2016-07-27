@@ -14,6 +14,12 @@ class StringLiteral extends Node {
 
     }
 
+    asValue(context) {
+
+      return this.value.substring(1, this.value.length - 1);
+
+    }
+
     transpile() {
 
         return this.value;

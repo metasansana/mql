@@ -3,7 +3,7 @@ import AbstractSyntaxTree from './nodes/AbstractSyntaxTree';
 
 let help = {
 
-        parseNumber(str) {
+    parseNumber(str) {
 
         return str;
 
@@ -30,7 +30,7 @@ class Parser {
         ParserImpl.parser.yy = {};
         ParserImpl.parser.yy.help = help;
         ParserImpl.parser.yy.ast = (typeof userAST === 'object') ? userAST : new AbstractSyntaxTree();
-        return ParserImpl.parser.parse(input);
+        return ParserImpl.parse(input);
 
     }
 
