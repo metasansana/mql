@@ -2,7 +2,7 @@
   "name": "mql",
   "version": "0.0.1",
   "description": "Parses an SQL like syntax for creating MongoDB queries",
-  "main": "index.js",
+  "main": "lib/Parser.js",
   "scripts": {
     "test": "npm run -s test-parser && npm run -s test-transpiler",
     "test-parser": "./node_modules/.bin/mocha --opts mocha.opts test/parse.js",
