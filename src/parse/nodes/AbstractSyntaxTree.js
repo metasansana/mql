@@ -10,6 +10,7 @@ import RemoveStatement from './RemoveStatement';
 import LogicFilter from './LogicFilter';
 import Filter from './Filter';
 import FieldReference from './FieldReference';
+import AllFieldsReference from './AllFieldsReference';
 import LimitClause from './LimitClause';
 import ContextReference from './ContextReference';
 import Identifier from './Identifier';
@@ -21,36 +22,38 @@ import SortClause from './SortClause';
 import FieldSort from './FieldSort';
 
 /**
- * AbstractSyntaxTree 
+ * AbstractSyntaxTree
  */
 class AbstractSyntaxTree {
 
-    constructor() {
+  constructor() {
 
-        this.BooleanLiteral = BooleanLiteral;
-        this.NumberLiteral = NumberLiteral;
-        this.StringLiteral = StringLiteral;
-        this.ArrayLiteral = ArrayLiteral;
-        this.ObjectLiteral = ObjectLiteral;
-        this.FindStatement = FindStatement;
-        this.InsertStatement = InsertStatement;
-        this.UpdateStatement = UpdateStatement;
-        this.RemoveStatement = RemoveStatement;
-        this.LogicFilter = LogicFilter;
-        this.Filter = Filter;
-        this.FieldReference = FieldReference;
-        this.ContextReference = ContextReference;
-        this.Identifier = Identifier;
-        this.LimitClause = LimitClause;
-        this.InnerJoinStatement = InnerJoinStatement;
-        this.LeftJoinStatement = LeftJoinStatement;
-        this.OuterJoinStatement = OuterJoinStatement;
-        this.JoinCondition = JoinCondition;
-        this.SortClause = SortClause;
-        this.FieldSort = FieldSort;
+    this.BooleanLiteral = BooleanLiteral;
+    this.NumberLiteral = NumberLiteral;
+    this.StringLiteral = StringLiteral;
+    this.ArrayLiteral = ArrayLiteral;
+    this.ObjectLiteral = ObjectLiteral;
+    this.FindStatement = FindStatement;
+    this.InsertStatement = InsertStatement;
+    this.UpdateStatement = UpdateStatement;
+    this.RemoveStatement = RemoveStatement;
+    this.LogicFilter = LogicFilter;
+    this.Filter = Filter;
+    this.FieldReference = FieldReference;
+    this.AllFieldsReference = AllFieldsReference;
+    this.ContextReference = ContextReference;
+    this.Identifier = Identifier;
+    this.LimitClause = LimitClause;
+    this.InnerJoinStatement = InnerJoinStatement;
+    this.LeftJoinStatement = LeftJoinStatement;
+    this.OuterJoinStatement = OuterJoinStatement;
+    this.JoinCondition = JoinCondition;
+    this.SortClause = SortClause;
+    this.FieldSort = FieldSort;
 
-    }
+  }
 
 }
 
 export default AbstractSyntaxTree
+

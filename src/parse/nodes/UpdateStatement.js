@@ -1,9 +1,9 @@
-import Node from './Node';
+import Statement from './Statement';
 
 /**
- * UpdateStatement 
+ * UpdateStatement
  */
-class UpdateStatement extends Node {
+class UpdateStatement extends Statement {
 
     constructor(collection, values, where, once, location) {
 
@@ -24,7 +24,7 @@ class UpdateStatement extends Node {
             $set: this.values.asValue(context)
         };
 
-        this.where.forEach(w => w.apply(where, context));
+    where = this.where.reduce((prev, curr) => curr.apply(prev, context), where);
 
         return (this.once) ?
             db.collection(this.collection.asValue(context)).updateOne(where, update) :

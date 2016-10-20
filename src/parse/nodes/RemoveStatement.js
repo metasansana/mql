@@ -1,34 +1,35 @@
 import Node from './Node';
 
 /**
- * RemoveStatement 
+ * RemoveStatement
  */
 class RemoveStatement extends Node {
 
-    constructor(collection, where, one, location) {
+  constructor(collection, where, one, location) {
 
-        super();
-        this.type = 'remove-statement';
-        this.collection = collection;
-        this.where = where;
-        this.one = one;
-        this.location = location;
+    super();
+    this.type = 'remove-statement';
+    this.collection = collection;
+    this.where = where;
+    this.one = one;
+    this.location = location;
 
-    }
+  }
 
-    execute(db, context) {
+  execute(db, context) {
 
-        var where = {};
-        var cursor;
+    var where = {};
+    var cursor;
 
-        this.where.forEach(w => w.apply(where, context));
+    where = this.where.reduce((prev, curr) => curr.apply(prev, context), where);
 
-        return (this.one) ?
-            db.collection(this.collection.asValue(context)).deleteOne(where) :
-            db.collection(this.collection.asValue(context)).deleteMany(where);
+    return (this.one) ?
+      db.collection(this.collection.asValue(context)).deleteOne(where) :
+      db.collection(this.collection.asValue(context)).deleteMany(where);
 
-    }
+  }
 
 }
 
 export default RemoveStatement
+

@@ -1,10 +1,10 @@
-import Node from './Node';
 import Property from 'property-seek';
+import Statement from './Statement';
 
 /**
- * InnerJoinStatement 
+ * InnerJoinStatement
  */
-class InnerJoinStatement extends Node {
+class InnerJoinStatement extends Statement {
 
     constructor(fields, collection, alias, where, modifiers, condition, location) {
 
@@ -63,4 +63,5 @@ class InnerJoinStatement extends Node {
 
 
 }
+
 export default InnerJoinStatement

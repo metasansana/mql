@@ -2,10 +2,10 @@ import Property from 'property-seek';
 import Node from './Node';
 
 /**
- * ContextReference 
- * @param {Expression} expression 
- * @param {array<Filter>} filters 
- * @param {Location} location 
+ * ContextReference
+ * @param {Expression} expression
+ * @param {array<Filter>} filters
+ * @param {Location} location
  */
 class ContextReference extends Node {
 
@@ -22,6 +22,12 @@ class ContextReference extends Node {
       return Property.get(context, this.key) || null;
 
     }
+
+  apply(o, context) {
+
+    return this.asValue(context);
+
+  }
 
     transpile() {
 

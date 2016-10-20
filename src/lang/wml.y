@@ -3,7 +3,7 @@
 */
 
 /*
- This is the Lexer portion, the syntax here corresponds to 
+ This is the Lexer portion, the syntax here corresponds to
  [flex](http://flex.sourceforge.net/manual)
 */
 
@@ -117,7 +117,7 @@ Text ({DoubleStringCharacter}*)|({SingleStringCharacter}*)
 %%
 
 statement
-                   
+
                     : insert_statement EOF
                       {$$ = $1; return $$;}
 
@@ -132,7 +132,7 @@ statement
                     ;
 
 insert_statement
-                    : INTO collection INSERT object_literal
+                    : INTO collection INSERT value_expression
                       {$$ = new yy.ast.InsertStatement($2, $4, @$);           }
                     ;
 
@@ -147,47 +147,44 @@ remove_statement
                     ;
 
 find_statement
-                    : FROM collection FIND field_select_expression
+                    : FROM collection FIND field_selection
                       where_expression? modifiers* joins*
                       {$$ = new yy.ast.FindStatement($2, $4, $5 || [], $6 || [], $7||[],  @$);}
                     ;
 
+field_selection
 
-field_select_expression
+                : field_references
+                  {$$ = $1;                                   }
 
-                    : field_name
-                      {$$ = {_id:false};
-                       $$[$1] = true;
-                      }
+                | '*'
+                  {$$ = [new yy.ast.AllFieldsReference(@$)]   }
 
-                    | '!' field_name
-                      {$$ = {_id:false};
-                       $$[$2] = false;
-                      }
-                    
-                    | field_select_expression ',' field_name
-                      {$$ = $1;
-                       $$[$3] = true;
-                      }
+                | context_reference
+                  {$$ = [$1];                                 }
 
-                    | field_select_expression ',' '!' field_name
-                      {$$ = $1;
-                       $$[$4] = false;
-                      }
+                | object_literal
+                  {$$ = [$1];                                 }
 
-                    | '*' 
-                      {$$ = {};}
+                ;
+
+field_references
+
+                    : field_reference
+                      {$$ = [$1]; }
+
+                    | field_selection ',' field_reference
+                      {$$ = $1.concat($3); }
+
                     ;
 
-/* Removed to reduce number of nodes needed to implement
 field_reference
                     : field_name
                       {$$ = new yy.ast.FieldReference($1, true, @$);  }
 
                     | '!' field_name
                       {$$ = new yy.ast.FieldReference($2, false,  @$);}
-                    ; 
-*/
+                    ;
 
 field_name
                     : STRING_LITERAL
@@ -200,7 +197,10 @@ field_name
 where_expression
 
                     : WHERE filters
-                      {$$ = $2;}
+                      {$$ = $2;                 }
+
+                    | WHERE context_reference
+                      {$$ = [$2];               }
                     ;
 
 filters
@@ -274,12 +274,12 @@ filter
                     | field_name NOT IN array_literal
                       {$$ = new yy.ast.Filter($1, '$nin', $4, @$);       }
 
-                    | field_name EXISTS 
+                    | field_name EXISTS
                       {$$ = new yy.ast.Filter($1, '$exists',
                       new yy.ast.BooleanLiteral(true, @$));  }
 
-                    | field_name NOT EXISTS 
-                      {$$ = 
+                    | field_name NOT EXISTS
+                      {$$ =
                       new yy.ast.Filter($1, '$exists',
                       new yy.ast.BooleanLiteral(false, @$)); }
 
@@ -311,7 +311,7 @@ sort_clause
 field_sorts
                     : field_sort
                       {$$ = [$1];                               }
-                    
+
                     | field_sorts ',' field_sort
                       {$$ = $1.concat($3);                      }
                     ;
@@ -319,7 +319,7 @@ field_sorts
 field_sort
                     : '-' field_name
                       {$$ = new yy.ast.FieldSort($2, -1, @$);   }
-                    
+
                     | '+' field_name
                       {$$ = new yy.ast.FieldSort($2, 1, @$);    }
                     ;
@@ -327,44 +327,44 @@ field_sort
 joins
                     : JOIN field_select_expression FROM collection
                       where_expression? modifiers* ON join_condition
-                      {$$ = 
+                      {$$ =
                       new yy.ast.InnerJoinStatement
                       ($2, $4, $4, $5||[], $6||[], $8, @$);
                       }
 
                     | JOIN field_select_expression FROM collection AS collection
                       where_expression? modifiers* ON join_condition
-                      {$$ = 
+                      {$$ =
                       new yy.ast.InnerJoinStatement
                       ($2, $4, $6, $7||[], $8||[], $10, @$);
                       }
 
                     | LEFT JOIN field_select_expression FROM collection
                       where_expression? modifiers* ON join_condition
-                      {$$ = 
+                      {$$ =
                       new yy.ast.LeftJoinStatement
-                      ($3, $5, $5, $6 || [], $7 || [], $9,  @$);        
-                      } 
+                      ($3, $5, $5, $6 || [], $7 || [], $9,  @$);
+                      }
 
                     | LEFT JOIN field_select_expression FROM collection
                       AS collection where_expression? modifiers* ON join_condition
-                      {$$ = 
+                      {$$ =
                       new yy.ast.LeftJoinStatement
-                      ($3, $5, $7, $8 || [], $9 || [], $11,  @$);        
-                      } 
+                      ($3, $5, $7, $8 || [], $9 || [], $11,  @$);
+                      }
 
                     | OUTER JOIN field_select_expression FROM collection
                       where_experession? modifiers* ON join_condition
-                      {$$ = 
+                      {$$ =
                       new yy.ast.OuterJoinStatement
-                      ($3, $5, $5, $6 || [], $7 || [], $9, @$);      
+                      ($3, $5, $5, $6 || [], $7 || [], $9, @$);
                       }
 
                     | OUTER JOIN field_select_expression FROM collection
                       AS collection where_experession? modifiers* ON join_condition
-                      {$$ = 
+                      {$$ =
                       new yy.ast.OuterJoinStatement
-                      ($3, $5, $7, $8 || [], $9 || [], $11,  @$);      
+                      ($3, $5, $7, $8 || [], $9 || [], $11,  @$);
                       }
                     ;
 
@@ -375,7 +375,7 @@ join_condition
 
 
 collection
-                    : (string_literal | identifier)
+                    : (string_literal | identifier | context_reference)
                     ;
 
 identifier
@@ -388,15 +388,15 @@ value_expression
                     | current_reference
                     | literal
                     ;
-                   
+
 current_reference
                     : '@' field_name
                       {$$ = new yy.ast.ContextReference($2, @$); }
                     ;
 
 context_reference
-                    : '{{' IDENTIFIER '}}' 
-                      {$$ = new yy.ast.ContextReference($2,  @$);} 
+                    : '{{' IDENTIFIER '}}'
+                      {$$ = new yy.ast.ContextReference($2,  @$);}
                     ;
 
 literal
@@ -408,7 +408,7 @@ literal
                     ;
 
 array_literal
-                    : '[' ']' 
+                    : '[' ']'
                       {$$ = new yy.ast.ArrayLiteral([], @$); }
 
                     | '[' value_list ']'
@@ -434,10 +434,10 @@ object_literal
 
 key_value_pairs
 
-                    : key_value_pair 
+                    : key_value_pair
                       {$$ = [$1]; }
-          
-                    | key_value_pairs ',' key_value_pair 
+
+                    | key_value_pairs ',' key_value_pair
                       {$$ = $1.concat($3); }
                     ;
 
@@ -452,12 +452,12 @@ string_literal
                     ;
 
 number_literal
-                    : NUMBER_LITERAL 
+                    : NUMBER_LITERAL
                     {$$ = new yy.ast.NumberLiteral(yy.help.parseNumber($1), @$); }
                     ;
 
 boolean_literal
-                    : BOOLEAN  
+                    : BOOLEAN
                     {$$ = new yy.ast.BooleanLiteral(yy.help.parseBoolean($1), @$);}
                     ;
 

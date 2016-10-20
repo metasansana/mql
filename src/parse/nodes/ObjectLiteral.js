@@ -1,9 +1,9 @@
 import Node from './Node';
 
 /**
- * ObjectLiteral 
- * @param {array<object>} keys 
- * @param {Location} location 
+ * ObjectLiteral
+ * @param {array<object>} keys
+ * @param {Location} location
  */
 class ObjectLiteral extends Node {
 
@@ -28,6 +28,12 @@ class ObjectLiteral extends Node {
         return o;
 
     }
+
+  apply(o, context) {
+
+    return this.asValue(context);
+
+  }
 
     transpile() {
 
