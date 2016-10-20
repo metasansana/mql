@@ -1,5 +1,5 @@
 import ParserImpl from './ParserImpl';
-import AbstractSyntaxTree from './nodes/AbstractSyntaxTree';
+import * as ast from './ast';
 
 let help = {
 
@@ -19,17 +19,17 @@ let help = {
 
 class Parser {
 
-    /** 
+    /**
      * parse input and return an AST
-     * @param {string} input 
-     * @param {AbstractSyntaxTree} userAST 
+     * @param {string} input
+     * @param {AbstractSyntaxTree} userAST
      * @returns {object}
      */
     static parse(input, userAST) {
 
         ParserImpl.parser.yy = {};
         ParserImpl.parser.yy.help = help;
-        ParserImpl.parser.yy.ast = (typeof userAST === 'object') ? userAST : new AbstractSyntaxTree();
+        ParserImpl.parser.yy.ast = (typeof userAST === 'object') ? userAST : ast;
         return ParserImpl.parse(input);
 
     }
