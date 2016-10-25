@@ -72,13 +72,15 @@ Text ({DoubleStringCharacter}*)|({SingleStringCharacter}*)
 'into'|'INTO'                                   return 'INTO';
 'insert'|'INSERT'                               return 'INSERT';
 'remove'|'REMOVE'                               return 'REMOVE';
+'update'|'UPDATE'                               return 'UPDATE';
+'upsert'|'UPSERT'                               return 'UPSERT';
 'with'|'WITH'                                   return 'WITH';
 'set'|'SET'                                     return 'SET';
 'once'|'ONCE'                                   return 'ONCE';
+'original'|'ORIGINAL'                           return 'ORIGINAL';
+'new'|'NEW'                                     return 'NEW';
 {NumberLiteral}                                 return 'NUMBER_LITERAL';
 {StringLiteral}                                 return 'STRING_LITERAL';
-'{{'                                            return '{{';
-'}}'                                            return '}}';
 '*'                                             return '*';
 '>'                                             return '>';
 '<'                                             return '<';
@@ -129,6 +131,9 @@ statement
 
                     | find_statement EOF
                       {$$ = $1; return $$;}
+
+                    | find_and_modify_statement EOF
+                      {$$ = $1; return $$;}
                     ;
 
 insert_statement
@@ -137,7 +142,7 @@ insert_statement
                     ;
 
 update_statement
-                    : FROM collection SET object_literal where_expression? ONCE?
+                    : FROM collection SET value_expression where_expression? ONCE?
                       {$$ = new yy.ast.UpdateStatement($2, $4, $5||[], $6||false,  @$);}
                     ;
 
@@ -150,6 +155,26 @@ find_statement
                     : FROM collection FIND field_selection
                       where_expression? modifiers* joins*
                       {$$ = new yy.ast.FindStatement($2, $4, $5 || [], $6 || [], $7||[],  @$);}
+                    ;
+
+find_and_modify_statement
+                    : FROM collection FIND version field_selection
+                      where_expression update_or_upsert value_expression sort_clause?
+                      {$$ =
+                      new yy.ast.FindAndModifyStatement
+                      ($2, $4, $5, $6, $7, $8, $9, @$); 
+                      }
+                    ;
+
+version
+                    : NEW      {$$ = true;  }
+                    | ORIGINAL {$$ = false; }
+                    ;
+
+update_or_upsert
+
+                    : UPDATE  {$$ = false;  }
+                    | UPSERT  {$$ = true;   }
                     ;
 
 field_selection
@@ -395,7 +420,7 @@ current_reference
                     ;
 
 context_reference
-                    : '{{' IDENTIFIER '}}'
+                    : '{' '{' IDENTIFIER '}' '}'
                       {$$ = new yy.ast.ContextReference($2,  @$);}
                     ;
 

@@ -5,6 +5,7 @@ export NumberLiteral from './NumberLiteral';
 export StringLiteral from './StringLiteral';
 export ArrayLiteral from './ArrayLiteral';
 export FindStatement from './FindStatement';
+export FindAndModifyStatement from './FindAndModifyStatement';
 export InsertStatement from './InsertStatement';
 export UpdateStatement from './UpdateStatement';
 export RemoveStatement from './RemoveStatement';

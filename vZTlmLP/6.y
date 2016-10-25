@@ -81,6 +81,8 @@ Text ({DoubleStringCharacter}*)|({SingleStringCharacter}*)
 'new'|'NEW'                                     return 'NEW';
 {NumberLiteral}                                 return 'NUMBER_LITERAL';
 {StringLiteral}                                 return 'STRING_LITERAL';
+'{{'                                            return '{{';
+'}}'                                            return '}}';
 '*'                                             return '*';
 '>'                                             return '>';
 '<'                                             return '<';
@@ -159,7 +161,7 @@ find_statement
 
 find_and_modify_statement
                     : FROM collection FIND version field_selection
-                      where_expression update_or_upsert value_expression sort_clause?
+                      where_expression update_or_upsert object_literal sort_clause?
                       {$$ =
                       new yy.ast.FindAndModifyStatement
                       ($2, $4, $5, $6, $7, $8, $9, @$); 
@@ -420,7 +422,7 @@ current_reference
                     ;
 
 context_reference
-                    : '{' '{' IDENTIFIER '}' '}'
+                    : '{{' IDENTIFIER '}}'
                       {$$ = new yy.ast.ContextReference($2,  @$);}
                     ;
 
