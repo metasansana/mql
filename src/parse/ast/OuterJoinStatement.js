@@ -2,7 +2,7 @@ import Node from './Node';
 import Property from 'property-seek';
 
 /**
- * OuterJoinStatement 
+ * OuterJoinStatement
  */
 class OuterJoinStatement extends Node {
 
@@ -25,11 +25,16 @@ class OuterJoinStatement extends Node {
         var cursor;
         var alias = this.alias.asValue();
         var where = {};
+  var fields = {
+            _id: false
+        };
+
+        fields = this.fields.reduce((prev, curr) => curr.apply(prev, context), fields);
 
         this.where.forEach(w => w.apply(where, context));
 
         cursor = db.collection(this.collection.asValue(context)).
-        find(where, this.fields);
+        find(where, fields);
 
         this.modifiers.forEach(m => m.apply(cursor));
 
@@ -65,7 +70,7 @@ class OuterJoinStatement extends Node {
                     } else {
 
                         var o = {};
-                        //Combine all that would join on the same 
+                        //Combine all that would join on the same
                         //object if that object existed
                         Property.set(o, alias, docs.filter((doc, i) => {
 

@@ -2,8 +2,8 @@ import Node from './Node';
 import Property from 'property-seek';
 
 /**
- * LeftJoinStatement 
- * @param {array} fields 
+ * LeftJoinStatement
+ * @param {array} fields
  * @param {string} collection
  * @param {string} alias
  */
@@ -28,17 +28,20 @@ class LeftJoinStatement extends Node {
         var cursor;
         var alias = this.alias.asValue();
         var where = this.condition.getWhereClause(data);
+        var fields = {
+            _id: false
+        };
+
+        fields = this.fields.reduce((prev, curr) => curr.apply(prev, context), fields);
 
         this.where.forEach(w => w.apply(where, context));
 
         cursor = db.collection(this.collection.asValue(context)).
-        find(where, this.fields);
-
+        find(where, fields);
         this.modifiers.forEach(m => m.apply(cursor));
 
         return cursor.toArray().
         then(docs => {
-
             return data.map(d => {
 
                 if (!Array.isArray(Property.get(d, alias)))

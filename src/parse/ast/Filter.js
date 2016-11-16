@@ -1,7 +1,7 @@
 import Node from './Node';
 
 /**
- * Filter 
+ * Filter
  */
 class Filter extends Node {
 
@@ -30,6 +30,9 @@ class Filter extends Node {
                     replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
                     $options: 'i'
                 };
+                break;
+            case '$elemMatch':
+                o[field] = {$elemMatch:  this.value.asValue(context)};
                 break;
             default:
                 o[field][this.operator] = this.value.asValue(context);

@@ -1,7 +1,7 @@
 import Node from './Node';
 
 /**
- * LimitClause 
+ * LimitClause
  */
 class LimitClause extends Node {
 
@@ -14,5 +14,12 @@ class LimitClause extends Node {
 
     }
 
+    apply(cursor, context) {
+
+        return cursor.limit(Number(this.value));
+
+    }
+
 }
+
 export default LimitClause

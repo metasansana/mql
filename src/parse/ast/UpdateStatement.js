@@ -5,12 +5,12 @@ import Statement from './Statement';
  */
 class UpdateStatement extends Statement {
 
-    constructor(collection, values, where, once, location) {
+    constructor(collection, changes, where, once, location) {
 
         super();
         this.type = 'update-statement';
         this.collection = collection;
-        this.values = values;
+        this.changes = changes;
         this.where = where;
         this.once = once;
         this.location = location;
@@ -20,11 +20,10 @@ class UpdateStatement extends Statement {
     execute(db, context) {
 
         var where = {};
-        var update = {
-            $set: this.values.asValue(context)
-        };
+        var update = {};
 
-    where = this.where.reduce((prev, curr) => curr.apply(prev, context), where);
+        update = this.changes.reduce((prev, curr) => curr.apply(prev, context), update);
+        where = this.where.reduce((prev, curr) => curr.apply(prev, context), where);
 
         return (this.once) ?
             db.collection(this.collection.asValue(context)).updateOne(where, update) :

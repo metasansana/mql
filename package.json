@@ -29,6 +29,6 @@
   "files": ["lib"],
   "dependencies": {
     "beof": "^0.2.0",
-    "property-seek": "0.0.2"
+    "property-seek": "0.2.0"
   }
 }

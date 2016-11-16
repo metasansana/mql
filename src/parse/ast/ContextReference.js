@@ -19,15 +19,15 @@ class ContextReference extends Node {
 
     asValue(context) {
 
-      return Property.get(context, this.key) || null;
+        return Property.get(context, this.key, null);
 
     }
 
-  apply(o, context) {
+    apply(o, context) {
 
-    return this.asValue(context);
+        return this.asValue(context);
 
-  }
+    }
 
     transpile() {
 

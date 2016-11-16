@@ -25,11 +25,17 @@ class InnerJoinStatement extends Statement {
         var cursor;
         var alias = this.alias.asValue();
         var where = this.condition.getWhereClause(data);
+   var fields = {
+            _id: false
+        };
+
+        fields = this.fields.reduce((prev, curr) => curr.apply(prev, context), fields);
+
 
         this.where.forEach(w => w.apply(where, context));
 
         cursor = db.collection(this.collection.asValue(context)).
-        find(where, this.fields);
+        find(where, fields);
 
         this.modifiers.forEach(m => m.apply(cursor));
 

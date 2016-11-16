@@ -1,9 +1,9 @@
 import Node from './Node';
 
 /**
- * LimitClause 
+ * SkipClause
  */
-class LimitClause extends Node {
+class SkipClause extends Node {
 
     constructor(value, location) {
 
@@ -14,5 +14,12 @@ class LimitClause extends Node {
 
     }
 
+    apply(cursor, context) {
+
+         return cursor.skip(Number(this.value));
+
+    }
+
 }
-export default LimitClause
+
+export default SkipClause

@@ -1,7 +1,7 @@
 import Node from './Node';
 
 /**
- * LogicFilter 
+ * LogicFilter
  */
 class LogicFilter extends Node {
 
@@ -10,7 +10,7 @@ class LogicFilter extends Node {
         super();
         this.type = 'logical-filter'
         this.left = left;
-        this.operator = operator;
+        this.operator = operator.toLowerCase();
         this.right = right;
         this.location = location;
 

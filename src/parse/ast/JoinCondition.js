@@ -2,7 +2,7 @@ import Property from 'property-seek';
 import Node from './Node';
 
 /**
- * JoinCondition 
+ * JoinCondition
  */
 class JoinCondition extends Node {
 
@@ -18,42 +18,34 @@ class JoinCondition extends Node {
     }
 
     /**
-     * getWhereClause 
+     * getWhereClause
      */
     getWhereClause(data, context) {
 
         var where = {};
         where[this.rkey.asValue(context)] = {
             $in: data.map(doc => Property.get(doc, this.lkey.asValue(context))).
-            filter(doc => (doc !== undefined) || (doc !== null))
+            filter(doc => (doc != null))
         };
         return where;
 
     }
 
-    compare(d, doc) {
+    compare(ldoc, rdoc) {
 
-        var left = Property.get(d, this.lkey.asValue({}));
-        var right = Property.get(doc, this.rkey.asValue({}));
+        var left = Property.get(ldoc, this.lkey.asValue({}));
+        var right = Property.get(rdoc, this.rkey.asValue({}));
 
-        if ((left === undefined) || (left === null))
+        if (left == null)
             return false;
 
-        if ((right === undefined) || (right === null))
+        if (right == null)
             return false;
 
         return (left === right);
 
     }
 
-
-    rightCompare(right1, right2) {
-
-        var key = this.rkey.asValue({});
-
-        return ((Property.get(right1, key)) === (Property.get(right2, key)));
-
-    }
 }
 
 export default JoinCondition

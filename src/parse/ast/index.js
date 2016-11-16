@@ -18,8 +18,14 @@ export ContextReference from './ContextReference';
 export Identifier from './Identifier';
 export InnerJoinStatement from './InnerJoinStatement';
 export LeftJoinStatement from './LeftJoinStatement';
+export PopulateStatement from './PopulateStatement';
+export InflateStatement from './InflateStatement';
 export OuterJoinStatement from './OuterJoinStatement';
 export JoinCondition from './JoinCondition';
+export JoinInCondition from './JoinInCondition';
 export SortClause from './SortClause';
 export FieldSort from './FieldSort';
+export SkipClause from './SkipClause';
+export SetClause from './SetClause';
+export PushClause from './PushClause';
 /* jshint ignore:end */

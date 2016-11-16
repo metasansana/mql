@@ -2,17 +2,17 @@ import Node from './Node';
 import Property from 'property-seek';
 
 /**
- * LeftJoinStatement 
- * @param {array} fields 
+ * PopulateStatement
+ * @param {array} fields
  * @param {string} collection
  * @param {string} alias
  */
-class LeftJoinStatement extends Node {
+class PopulateStatement extends Node {
 
     constructor(fields, collection, alias, where, modifiers, condition, location) {
 
         super();
-        this.type = 'left-join';
+        this.type = 'populate-statement';
         this.collection = collection;
         this.alias = alias;
         this.fields = fields;
@@ -26,30 +26,39 @@ class LeftJoinStatement extends Node {
     apply(data, db, context) {
 
         var cursor;
-        var alias = this.alias.asValue();
+        var target = this.condition.lkey.asValue(context);
+        var alias = (this.alias) ? this.alias.asValue(context) : target;
         var where = this.condition.getWhereClause(data);
+        var fields = {
+            _id: false
+        };
+
+        fields = this.fields.reduce((prev, curr) => curr.apply(prev, context), fields);
 
         this.where.forEach(w => w.apply(where, context));
 
-        cursor = db.collection(this.collection.asValue(context)).
-        find(where, this.fields);
+        cursor = db.collection(this.collection.asValue(context)).find(where, fields);
 
         this.modifiers.forEach(m => m.apply(cursor));
 
         return cursor.toArray().
         then(docs => {
-
             return data.map(d => {
 
-                if (!Array.isArray(Property.get(d, alias)))
-                    Property.set(d, alias, []);
+                var found = false;
 
                 docs.forEach(doc => {
 
-                    if (this.condition.compare(d, doc))
-                        Property.get(d, alias).push(doc);
+                    if (this.condition.compare(d, doc)) {
+
+                        Property.set(d, alias, doc);
+                        found = true;
+
+                    }
 
                 });
+
+                if (!found) Property.set(d, alias, null);
 
                 return d;
 
@@ -60,4 +69,4 @@ class LeftJoinStatement extends Node {
     }
 }
 
-export default LeftJoinStatement
+export default PopulateStatement

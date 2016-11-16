@@ -70,17 +70,22 @@ Text ({DoubleStringCharacter}*)|({SingleStringCharacter}*)
 'sort'|'SORT'                                   return 'SORT';
 'by'|'BY'                                       return 'BY';
 'into'|'INTO'                                   return 'INTO';
+'skip'|'SKIP'                                   return 'SKIP';
 'insert'|'INSERT'                               return 'INSERT';
 'remove'|'REMOVE'                               return 'REMOVE';
 'update'|'UPDATE'                               return 'UPDATE';
 'upsert'|'UPSERT'                               return 'UPSERT';
 'with'|'WITH'                                   return 'WITH';
 'set'|'SET'                                     return 'SET';
+'push'|'PUSH'                                   return 'PUSH';
 'once'|'ONCE'                                   return 'ONCE';
 'original'|'ORIGINAL'                           return 'ORIGINAL';
 'new'|'NEW'                                     return 'NEW';
+'populate'|'POPULATE'                           return 'POPULATE';
+'inflate'|'INFLATE'                             return 'INFLATE';
 {NumberLiteral}                                 return 'NUMBER_LITERAL';
 {StringLiteral}                                 return 'STRING_LITERAL';
+'$elemMatch'                                    return 'ELEM';
 '*'                                             return '*';
 '>'                                             return '>';
 '<'                                             return '<';
@@ -142,33 +147,48 @@ insert_statement
                     ;
 
 update_statement
-                    : FROM collection SET value_expression where_expression? ONCE?
-                      {$$ = new yy.ast.UpdateStatement($2, $4, $5||[], $6||false,  @$);}
+                    : FROM collection update_clauses where_expression? ONCE?
+                      {$$ = new yy.ast.UpdateStatement($2, $3, $4||[], $5||false,  @$);}
                     ;
 
+update_clauses
+                    : update_clause {$$ = [$1];}
+
+                    | update_clauses update_clause {$$ = $1.concat($2); }
+                    ;
+
+update_clause
+
+                    : SET value_expression
+                      {$$ = new yy.ast.SetClause($2, @$); }
+
+                    | PUSH field_name value_expression
+                      {$$ = new yy.ast.PushClause($2, $3,  @2);}
+                    ;
+                    
 remove_statement
                     : FROM collection REMOVE where_expression? ONCE?
                       {$$ = new yy.ast.RemoveStatement($2, $4||[], $5||false, @$);}
                     ;
 
 find_statement
-                    : FROM collection FIND field_selection
+                    : FROM collection FIND ONE? field_selection
                       where_expression? modifiers* joins*
-                      {$$ = new yy.ast.FindStatement($2, $4, $5 || [], $6 || [], $7||[],  @$);}
+                      {$$ = new yy.ast.FindStatement($2, $5, $6 || [], $7 || [], $8||[], $4, @$);}
                     ;
 
 find_and_modify_statement
                     : FROM collection FIND version field_selection
-                      where_expression update_or_upsert value_expression sort_clause?
+                      where_expression update_or_upsert SET? value_expression sort_clause?
                       {$$ =
                       new yy.ast.FindAndModifyStatement
-                      ($2, $4, $5, $6, $7, $8, $9, @$); 
+                      ($2, $4, $5, $6, $7, $8, $9, $10, @$); 
                       }
                     ;
 
 version
-                    : NEW      {$$ = true;  }
-                    | ORIGINAL {$$ = false; }
+                    : NEW      {$$ = false;  }
+                    | ORIGINAL {$$ = true; }
                     ;
 
 update_or_upsert
@@ -311,16 +331,17 @@ filter
                     ;
 
 filter_operator
-                    : '>'     {$$ = '$gt';    }
-                    | '>='    {$$ = '$gte';   }
-                    | '<'     {$$ = '$lt';    }
-                    | '<='    {$$ = '$lte';   }
-                    | '=='    {$$ = '$eq';    }
-                    | '!='    {$$ = '$ne';    }
+                    : '>'     {$$ = '$gt';        }
+                    | '>='    {$$ = '$gte';       }
+                    | '<'     {$$ = '$lt';        }
+                    | '<='    {$$ = '$lte';       }
+                    | '=='    {$$ = '$eq';        }
+                    | '!='    {$$ = '$ne';        }
+                    | ELEM    {$$ = '$elemMatch'  }
                     ;
 
 modifiers
-                    : (limit_clause|sort_clause)
+                    : (limit_clause|sort_clause|skip_clause)
                     ;
 
 limit_clause
@@ -330,7 +351,11 @@ limit_clause
 
 sort_clause
                     : SORT BY field_sorts
-                      {$$ = new yy.ast.SortClause($3,  @$);     }
+                      {$$ = new yy.ast.SortClause(
+                      new yy.ast.ObjectLiteral($3, @$), @$);    }
+
+                    | (context_reference|object_literal)
+                      {$$ = new yy.ast.SortClause($1, @$);      }
                     ;
 
 field_sorts
@@ -342,50 +367,71 @@ field_sorts
                     ;
 
 field_sort
-                    : '-' field_name
-                      {$$ = new yy.ast.FieldSort($2, -1, @$);   }
+                    : '-' (identifier|string_literal) 
+                    {$$ = {key: $2, value: new yy.ast.NumberLiteral(-1, @$)}; }
 
-                    | '+' field_name
-                      {$$ = new yy.ast.FieldSort($2, 1, @$);    }
+                    | '+' (identifier|string_literal) 
+                      {$$ = {key: $2, value: new yy.ast.NumberLiteral(1, @$)}; }
+                    ;
+
+skip_clause
+
+                    : SKIP number_literal
+                      {$$ = new yy.SkipClause($2, @$);          }
+
                     ;
 
 joins
-                    : JOIN field_select_expression FROM collection
+                    : POPULATE field_selection FROM collection alias?
+                      where_expression? modifiers* ON join_condition
+                      {$$ =
+                      new yy.ast.PopulateStatement
+                      ($2, $4, $5, $6 || [], $7 || [], $9,  @$);
+                      }
+
+                    | INFLATE field_selection FROM collection alias?
+                      where_expression? modifiers* ON join_in_condition
+                      {$$ =
+                      new yy.ast.InflateStatement
+                      ($2, $4, $5, $6 || [], $7 || [], $9,  @$);
+                      }
+
+                    | JOIN field_selection FROM collection
                       where_expression? modifiers* ON join_condition
                       {$$ =
                       new yy.ast.InnerJoinStatement
                       ($2, $4, $4, $5||[], $6||[], $8, @$);
                       }
 
-                    | JOIN field_select_expression FROM collection AS collection
+                    | JOIN field_selection FROM collection AS collection
                       where_expression? modifiers* ON join_condition
                       {$$ =
                       new yy.ast.InnerJoinStatement
                       ($2, $4, $6, $7||[], $8||[], $10, @$);
                       }
 
-                    | LEFT JOIN field_select_expression FROM collection
+                    | LEFT JOIN field_selection FROM collection
                       where_expression? modifiers* ON join_condition
                       {$$ =
                       new yy.ast.LeftJoinStatement
                       ($3, $5, $5, $6 || [], $7 || [], $9,  @$);
                       }
 
-                    | LEFT JOIN field_select_expression FROM collection
+                    | LEFT JOIN field_selection FROM collection
                       AS collection where_expression? modifiers* ON join_condition
                       {$$ =
                       new yy.ast.LeftJoinStatement
                       ($3, $5, $7, $8 || [], $9 || [], $11,  @$);
                       }
 
-                    | OUTER JOIN field_select_expression FROM collection
+                    | OUTER JOIN field_selection FROM collection
                       where_experession? modifiers* ON join_condition
                       {$$ =
                       new yy.ast.OuterJoinStatement
                       ($3, $5, $5, $6 || [], $7 || [], $9, @$);
                       }
 
-                    | OUTER JOIN field_select_expression FROM collection
+                    | OUTER JOIN field_selection FROM collection
                       AS collection where_experession? modifiers* ON join_condition
                       {$$ =
                       new yy.ast.OuterJoinStatement
@@ -398,6 +444,15 @@ join_condition
                       {$$ = new yy.ast.JoinCondition($1, $3, @$);}
                     ;
 
+join_in_condition
+                    : (string_literal | identifier) IN (string_literal | identifier)
+                      {$$ = new yy.ast.JoinInCondition($1, $3, @$);}
+                    ;
+
+alias
+                    : AS collection
+                      {$$ = $2;}
+                    ;
 
 collection
                     : (string_literal | identifier | context_reference)
@@ -421,7 +476,7 @@ current_reference
 
 context_reference
                     : '{' '{' IDENTIFIER '}' '}'
-                      {$$ = new yy.ast.ContextReference($2,  @$);}
+                      {$$ = new yy.ast.ContextReference($3,  @$);}
                     ;
 
 literal

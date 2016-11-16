@@ -5,7 +5,7 @@ import Statement from './Statement';
  */
 class FindAndModifyStatement extends Statement {
 
-    constructor(collection, original, fields, where, upsert,  update, sort, location) {
+    constructor(collection, original, fields, where, upsert, set, update, sort, location) {
 
         super();
         this.type = 'find-and-modify-statement';
@@ -14,6 +14,7 @@ class FindAndModifyStatement extends Statement {
         this.fields = fields;
         this.where = where;
         this.upsert = upsert;
+        this.set = set;
         this.update = update;
         this.sort = sort;
         this.location = location;
@@ -22,9 +23,12 @@ class FindAndModifyStatement extends Statement {
 
     execute(db, context) {
 
-        var where = {};
-        var options = { returnOriginal: this.original, upsert:this.upsert };
+        var where = Object.create(null);
+        var fields = Object.create(null);
+        var options = { returnOriginal: this.original, upsert: this.upsert };
         var update = this.update.asValue(context);
+
+        update = this.set ? { $set: update } : update;
 
         where = this.where.reduce((prev, curr) => curr.apply(prev, context), where);
 
