@@ -2,14 +2,14 @@
   "name": "mql",
   "version": "0.0.1",
   "description": "Parses an SQL like syntax for creating MongoDB queries",
-  "main": "lib/parse/Parser.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "npm run -s test-parser",
     "test-parser": "./node_modules/.bin/mocha --opts mocha.opts test/parse.js",
     "test-transpiler": "./node_modules/.bin/mocha --opts mocha.opts test/transpile.js",
     "test-core": "./node_modules/.bin/jest build",
     "build": "rm -R lib; mkdir -p lib; npm run parser; ./node_modules/.bin/babel -s inline -D src -d lib",
-    "parser": "./node_modules/.bin/jison -o src/parse/ParserImpl.js src/lang.y"
+    "parser": "./node_modules/.bin/jison -o src/ParserImpl.js src/lang.y"
   },
   "author": "Lasana Murray <lmurray@quenk.com> (http://quenk.com)",
   "license": "Apache-2.0",
@@ -26,7 +26,9 @@
     "mongodb": "^2.2.4",
     "must": "^0.13.1"
   },
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "dependencies": {
     "beof": "^0.2.0",
     "property-seek": "0.2.0"

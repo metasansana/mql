@@ -164,6 +164,9 @@ update_clause
 
                     | PUSH field_name value_expression
                       {$$ = new yy.ast.PushClause($2, $3,  @2);}
+
+                    | (object_literal | context_reference)
+                      {$$ = $1;}
                     ;
                     
 remove_statement
